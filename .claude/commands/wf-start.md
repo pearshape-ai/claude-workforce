@@ -12,8 +12,11 @@ Workestrator polls the configured PearScarf MCP, picks up intents where `status=
 
 2. **Prepare the runtime directory.** Ensure `.workforce/` exists. Ensure `.workforce/events.jsonl` exists (`touch` it) so the Monitor has something to attach to even before the daemon writes its first line.
 
-3. **Launch workestrator in the background.** Run:
+3. **Launch workestrator in the background.** First source `.env` so the daemon inherits `ANTHROPIC_API_KEY` (consumed by the Claude Agent SDK) and any other secrets the install collected:
    ```bash
+   set -a
+   source .env
+   set +a
    nohup workestrator run --config workestrator.yaml \
      > .workforce/workestrator.log 2>&1 &
    ```
