@@ -61,6 +61,31 @@ cat > "$install_path/.mcp.json" <<EOF
 }
 EOF
 
+# Workestrator orchestrator config — read at every `/wf-start`. Sensible
+# defaults; edit any knob in place. Full reference:
+# https://github.com/pearshape-ai/workestrator
+cat > "$install_path/workestrator.yaml" <<EOF
+pearscarf:
+  mcp_url: $mcp_url
+
+orchestrator:
+  poll_interval_seconds: 30
+  max_concurrent_agents: 4
+
+roles:
+  dir: ./roles
+
+agent:
+  model: claude-sonnet-4-5
+  max_turns: 50
+
+workspace:
+  dir: ./.workestrator/workspaces
+
+events:
+  log_path: ./.workforce/events.jsonl
+EOF
+
 echo "  Installing workestrator..."
 if command -v uv >/dev/null 2>&1; then
     uv tool install --quiet "git+https://github.com/pearshape-ai/workestrator.git"
@@ -78,6 +103,11 @@ echo ""
 echo "  Auth: workforce agents run on your Claude Code subscription via OAuth."
 echo "  Make sure you've run \`claude login\` at least once. To use per-token API"
 echo "  billing instead, uncomment ANTHROPIC_API_KEY in $install_path/.env."
+echo ""
+echo "  Config written:"
+echo "    .env               (auth)"
+echo "    .mcp.json          (Claude Code MCP registration)"
+echo "    workestrator.yaml  (orchestrator settings — edit to tune)"
 echo ""
 echo "  Next:"
 echo "    cd $install_path"
