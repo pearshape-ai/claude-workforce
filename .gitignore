@@ -1,6 +1,8 @@
 .env
 .mcp.json
+workestrator.yaml
 .workforce/
+.workestrator/
 .venv/
 __pycache__/
 *.pyc

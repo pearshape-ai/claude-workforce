@@ -26,23 +26,28 @@ Workestrator polls the configured PearScarf MCP, picks up intents where `status=
 
 5. **Arm a persistent Monitor on the event stream.** Use the Monitor tool with `persistent: true` watching `.workforce/events.jsonl`. Each line workestrator writes to that file is a JSON event that will arrive in this session as a `<task-notification>`.
 
-6. **Handle notifications as they arrive.** Each event is one JSON object per line:
-   ```
-   {"ts": "<iso8601>", "event": "<type>", "intent_id": "<id>", "role": "<role>", "owner": "<persona>", "title": "<intent-title>", ...}
-   ```
-   Event types you may see:
-   - `daemon_started` — daemon booted and is polling.
-   - `intent_dispatched` — a persona session is starting on this intent.
-   - `intent_completed` — persona finished, intent moved to `done`.
-   - `intent_failed` — persona errored; the event has an `error` field.
-   - `daemon_stopping` — `/wf-stop` was invoked.
+6. **Handle notifications as they arrive.** Each event is one JSON object per line. Field shape varies by event type:
+
+   - **Lifecycle events** (daemon + intent state):
+     - `daemon_started` — daemon booted and is polling. Fields: `poll_interval_seconds`, `max_concurrent_agents`.
+     - `daemon_stopping` — `/wf-stop` was invoked. Fields: `in_flight`.
+     - `intent_dispatched` — a persona session is starting. Fields: `intent_id`, `role`, `owner`, `title`.
+     - `intent_completed` — persona finished and the intent reached `done` / `cancelled`. Fields: `intent_id`, `role`, `owner`, `title`, `final_status`.
+     - `intent_failed` — persona errored or returned without flipping status. Fields: `intent_id`, `role`, `owner`, `title`, `error`.
+   - **Per-message events** (what the persona is doing right now, emitted from inside a dispatched session):
+     - `agent_text` — the persona sent a text message. Fields: `intent_id`, `role`, `text` (truncated snippet, ~240 chars).
+     - `agent_tool_use` — the persona invoked a tool. Fields: `intent_id`, `role`, `tool`, `summary` (input snippet, ~200 chars).
 
    For each notification, parse the JSON and write a one-line human update to the operator. Examples:
    - `intent_dispatched`: `Hex (head-eng) is starting on intent_abc123 — "ship parked logging feature".`
+   - `agent_text`: `Liz (eng): I'm reading the existing CLI source now.`
+   - `agent_tool_use` (Bash): `Liz (eng) used Bash: cd pearscarf && cat pearscarf/cli.py`
+   - `agent_tool_use` (Edit): `Liz (eng) edited pearscarf/__init__.py`
+   - `agent_tool_use` (MCP tool): `Linda (comms) called mcp__pearscarf__query_facts({"subject":"PearScarf"})`
    - `intent_completed`: `Hex finished intent_abc123.`
    - `intent_failed`: `Anton failed intent_def456: <error>.`
 
-   Surface events as they arrive, one at a time. Do not batch-summarize.
+   Surface events as they arrive, one at a time. Do not batch-summarize. The `agent_text` and `agent_tool_use` events will be frequent during a dispatched session — that's expected; the operator wants to watch the work happen.
 
 7. **Report initial state.** After the Monitor is armed, report:
    ```
