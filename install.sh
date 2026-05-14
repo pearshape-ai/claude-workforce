@@ -13,10 +13,27 @@ set -euo pipefail
 REPO_URL="${CLAUDE_WORKFORCE_REPO:-https://github.com/pearshape-ai/claude-workforce.git}"
 DEFAULT_PATH="$(pwd)/claude-workforce"
 
-echo ""
-echo "  claude-workforce installer"
-echo "  ──────────────────────────"
-echo ""
+if [ -t 1 ]; then
+    BOLD=$'\033[1m'; DIM=$'\033[2m'; RESET=$'\033[0m'
+    GREEN=$'\033[0;32m'; CYAN=$'\033[0;36m'
+else
+    BOLD=''; DIM=''; RESET=''; GREEN=''; CYAN=''
+fi
+
+banner() {
+    printf '\n%s' "$GREEN"
+    cat <<'BANNER'
+         _                        _     __
+    __ _(_)   __      _____  _ __| | __/ _| ___  _ __ ___ ___
+   / _` | |   \ \ /\ / / _ \| '__| |/ / |_ / _ \| '__/ __/ _ \
+  | (_| | |    \ V  V / (_) | |  |   <|  _| (_) | | | (_|  __/
+   \__,_|_|     \_/\_/ \___/|_|  |_|\_\_|  \___/|_|  \___\___|
+BANNER
+    printf '%s' "$RESET"
+    printf "\n  ${BOLD}installer${RESET}${DIM} ─ self-driving teams of AI coworkers, grounded in PearScarf${RESET}\n\n"
+}
+
+banner
 
 read -r -p "  Install path [$DEFAULT_PATH]: " install_path
 install_path="${install_path:-$DEFAULT_PATH}"
@@ -28,7 +45,12 @@ if [ -e "$install_path" ]; then
     exit 1
 fi
 
-read -r -p "  PearScarf MCP URL (SSE endpoint, e.g. https://your-pearscarf/sse): " mcp_url
+echo ""
+echo "  Don't have a PearScarf MCP running yet? Install pearscarf locally first:"
+echo "    bash <(curl -fsSL https://raw.githubusercontent.com/pearshape-ai/pearscarf/main/install.sh)"
+echo "  It brings up a local pearscarf in Docker and prints the MCP URL — paste it below."
+echo ""
+read -r -p "  PearScarf MCP URL (SSE endpoint, e.g. http://localhost:8090/sse): " mcp_url
 [ -n "$mcp_url" ] || { echo "  A PearScarf MCP URL is required." >&2; exit 1; }
 
 echo ""
