@@ -28,10 +28,6 @@ if [ -e "$install_path" ]; then
     exit 1
 fi
 
-read -r -s -p "  Anthropic API key: " anthropic_key
-echo ""
-[ -n "$anthropic_key" ] || { echo "  An Anthropic API key is required." >&2; exit 1; }
-
 read -r -p "  PearScarf MCP URL (SSE endpoint, e.g. https://your-pearscarf/sse): " mcp_url
 [ -n "$mcp_url" ] || { echo "  A PearScarf MCP URL is required." >&2; exit 1; }
 
@@ -40,8 +36,14 @@ echo "  Cloning into $install_path..."
 git clone --quiet --depth 1 "$REPO_URL" "$install_path"
 
 cat > "$install_path/.env" <<EOF
-ANTHROPIC_API_KEY=$anthropic_key
 PEARSCARF_MCP_URL=$mcp_url
+EOF
+cat >> "$install_path/.env" <<'EOF'
+
+# Anthropic API key. OPTIONAL — leave commented out to use Claude Code
+# subscription auth (via `claude login`, the default). Set this only if you
+# don't have a Claude Code subscription and want per-token API billing.
+# ANTHROPIC_API_KEY=
 EOF
 chmod 600 "$install_path/.env"
 
@@ -73,10 +75,12 @@ fi
 echo ""
 echo "  Done."
 echo ""
+echo "  Auth: workforce agents run on your Claude Code subscription via OAuth."
+echo "  Make sure you've run \`claude login\` at least once. To use per-token API"
+echo "  billing instead, uncomment ANTHROPIC_API_KEY in $install_path/.env."
+echo ""
 echo "  Next:"
 echo "    cd $install_path"
-echo "    claude login        # if not already (Claude Code uses OAuth, not .env)"
 echo "    claude              # open Claude Code — pearscarf MCP auto-registers"
-echo "    /spec <one-liner>   # seed the intent set on your PearScarf MCP"
-echo "    /workforce-run      # boot the autonomous loop"
+echo "    /wf-start           # boot the autonomous workforce daemon"
 echo ""
