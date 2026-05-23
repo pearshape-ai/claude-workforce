@@ -48,10 +48,12 @@ Tools available:
 
 The PearScarf graph holds **provenance** — every fact has a `source_url` pointing back to where the record body lives. So the order is non-negotiable:
 
-1. **Persist the record body to your operation's shared system of record** (the operator's git-backed records repo, wiki, doc store — whatever the intent body points at). For most setups: write a markdown file at the path the intent body specifies, `git commit`, `git push`.
-2. **Only after persistence is complete**, call `submit_record` on the `pearscarf` MCP with the body content + the resolvable `url`.
+1. **Persist the record body to the records repo (`sor`).** Reality records always land in the operator's system-of-record git repo — never in plans/wiki/scratch repos (e.g. `notion/`). The exact subtree for your role is declared in your role's `config.yaml` as `records_path:` (e.g. `sor/eng/infrascarf/`, `sor/gtm/linkedin-prospecting/`, `sor/comms/`). Write your markdown file at `<records_path>/<your-record-filename>.md`, `git commit`, `git push`.
+2. **Only after persistence is complete**, call `submit_record` on the `pearscarf` MCP with the body content + the resolvable `url` pointing back to that committed path.
 
-Records that exist only in the graph but not in your shared store will haunt you — provenance links break the moment someone clicks them.
+Records that exist only in the graph but not in `sor` will haunt you — provenance links break the moment someone clicks them. Records that land in `notion/` or other plans/wiki repos are mis-categorized: those repos are for plans and reference material, not shipped operational deltas.
+
+If your role's `config.yaml` does not declare `records_path:`, halt and surface to the operator — never guess a path.
 
 ## Format spec
 
