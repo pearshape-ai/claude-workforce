@@ -49,9 +49,9 @@ Workestrator polls the configured PearScarf MCP, picks up intents where `status=
 
    Surface events as they arrive, one at a time. Do not batch-summarize. The `agent_text` and `agent_tool_use` events will be frequent during a dispatched session — that's expected; the operator wants to watch the work happen.
 
-7. **Report initial state.** After the Monitor is armed, report:
+7. **Report initial state.** After the Monitor is armed, capture the running version with `workestrator --version` (this is the version the just-launched daemon is running), then report:
    ```
-   Workestrator started (PID <pid>).
+   Workestrator <version> started (PID <pid>).
    Logs:   .workforce/workestrator.log
    Events: .workforce/events.jsonl (streaming into this session)
    ```
