@@ -59,6 +59,67 @@ Tools available:
 - **`set_intent_status`** — flip the status of your dispatched intent. You call this once per session, at the end. `done` if you shipped, `cancelled` if you couldn't.
 - **`set_intent_parent` / `set_intent_type` / `set_intent_owner` / `set_intent_owner_role` / `set_intent_dependencies`** — mutate intent sidecar state. Usually only strategic agents that plan and decompose work call these.
 
+## What counts as an operational delta (i.e., what becomes a record)
+
+PearScarf is **horizontal context** — the shared truth other coworkers ground on. Most of what you do isn't horizontal: it's **vertical** (per-agent state, in-progress work, micro-actions) and lives where it is (your workspace, the tracker sheet, the intent body), not in the graph.
+
+### The rule
+
+**An operational delta is the smallest unit of work an outside coworker would *name* as a thing that happened.** Not the constituent micro-actions that produced it. Record at *that* grain.
+
+The outside view is decisive. From inside your session, the work is process — edits, commits, gates, retries. From outside, what *happened* is the named, externally-referenceable thing: a version shipped, a deploy landed, an artifact went live, a session yielded a signal, a decision was adopted. **The record names the outside view.**
+
+### Three conditions for a record
+
+A delta qualifies if all three hold:
+
+1. **Persists in shared reality** outside your workspace — committed-and-pushed to the canonical remote, deployed and addressable, published externally. Not a local edit, not an uncommitted draft, not an intermediate state.
+2. **Establishes a new fact** that wasn't true before — not a refinement of an in-progress artifact, not a fix-up of your own previous work.
+3. **Another coworker would reasonably ground on it** — to announce, reference, plan against. Not "look what I did" reporting.
+
+### The litmus test
+
+*Would a different coworker, reading the graph weeks from now, need to know this happened to do their job?* If yes → record at that grain. If only you and the operator care, it's vertical — the vertical surface (file, sheet, intent body) already holds it.
+
+### Reality vs intent — the acid test
+
+A reality record describes **what is now true** (present-tense) or **what happened** (past-tense). If you'd write the fact with **"will"**, **"plan to"**, **"should"**, or **"propose"** — it's *intent*, not reality. Intent has its own surface (`submit_intent`); reality records do not carry future commitments.
+
+- **Reality** (`submit_record`): *"version N ships feature X"*, *"service Y is deployed to environment Z"*, *"positioning is set to A"*.
+- **Intent** (`submit_intent` — a different surface): *"we will refactor next quarter"*, *"I propose shifting to channel X"*, *"plan to ship Y next sprint"*.
+
+If you reach for `submit_record` and find yourself writing "will," stop. That's a `submit_intent`, not a record.
+
+### Canonical examples
+
+**Horizontal (record):**
+- A named version release with an externally-visible change.
+- A successful deploy event landing a new version in an environment.
+- A published artifact going live.
+- A session-level signal from an executor's work (volume + pattern).
+- A standing decision adopted (positioning, pricing, operating norm).
+
+**Vertical (no record):**
+- Individual commits / edits / pushes that constitute one named release.
+- Drafts and re-drafts of in-progress artifacts.
+- Format-fixes, line-adds, reformats on an in-progress draft.
+- Per-action accounting (each profile viewed, each tweet typed, each shell command).
+- Failed attempts — only the successful state-change is the delta.
+- Setup / housekeeping with no external consequence.
+
+### Two failure modes to recognize
+
+- **Action-as-record.** "I fixed the draft format" isn't a delta — the draft was already there; the *publish* (downstream) is the delta. Mutations to in-progress work are not records.
+- **Vertical-as-record.** "I read the CHANGELOG" / "I saw the blocklist" — these are vertical (per-action, per-agent). Not records.
+
+### Default = no record when uncertain
+
+If you can't form a clean noun + state-change sentence in outside terms (`X shipped Y`, `Y deployed to Z`, `A decided B`), default to no record. Records are the graph's signal; non-delta records are permanent noise. The cost of *not* recording a borderline event is small (you can record it later if it matters); the cost of recording a non-delta is permanent noise in the consumer surface.
+
+### Your role's specifics
+
+Your role may ship an `op-delta.md` alongside `soul.md` and `skills.md` declaring the exact grain that's record-worthy *for you* — with concrete "what counts" and "what does not count" examples for your domain. When present, that file refines the general rule above with your role's specifics. **When absent, apply this general rule using your judgment.**
+
 ## Submission discipline (for reality records)
 
 The PearScarf graph holds **provenance** — every fact has a `source_url` pointing back to where the record body lives. So the order is non-negotiable:
