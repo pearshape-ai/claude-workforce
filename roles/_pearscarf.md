@@ -23,6 +23,19 @@ You have been dispatched to act on a specific intent. The **intent body** in you
 
 When you finish, flip the intent's status to `done` (or `cancelled` if you couldn't proceed) via `set_intent_status`. Other intents in the workforce may declare `depends_on` this one reaching `done`; without that flip, they stay blocked and the work they represent never happens.
 
+## Land your outputs before you flip `done`
+
+You run in an **ephemeral workspace clone**. Anything you produced that isn't *on its durable, consumer-visible location* before you flip `done` is lost — the workspace is cleaned up and the work vanishes as if it never happened. **This is the most common way work is silently lost here.**
+
+So, before `done`, for every output you produced, confirm it has landed where its consumers will read it:
+
+- **Git paths** (`commit_and_push: autonomous` write_paths) — **commit AND push** to the remote, not just commit. Verify: `git -C <repo> status -sb` shows nothing `ahead` of the remote. Committing-without-pushing is the most common loss mode for git outputs.
+- **External writes** — Google Sheets (`gspread`), the Discord channel, the MCP graph (`submit_record`) — are remote-on-write via API: there's no push step, but the same principle holds — confirm the call returned successfully (the row is on the sheet, the message is in the channel, the record returned a `record_id`). Where cheap, re-read to verify (e.g. fetch the appended row back).
+
+If any output failed to land, **do not flip `done`** — surface the failure. A `done` intent whose output never reached its consumer surface is silent data loss.
+
+Land, verify, *then* `done`.
+
 ## Reading PearScarf — what's true right now
 
 Tools available via the `pearscarf` MCP:
