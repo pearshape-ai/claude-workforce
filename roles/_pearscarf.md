@@ -38,6 +38,8 @@ Land, verify, *then* `done`.
 
 ## Reading PearScarf — what's true right now
 
+**How to query well — the read discipline — is served at the `pearscarf://guide/consumer` MCP resource. The tools below are the surface; that resource is how to use them.**
+
 Tools available via the `pearscarf` MCP:
 
 - **`get_schema`** — vocabulary introspection. Entity types, edge labels, fact types. Call once at session start to learn what's even queryable.
@@ -46,7 +48,7 @@ Tools available via the `pearscarf` MCP:
 - **`get_record_status`** — check a specific record's extraction state (`received` / `evaluating` / `extracting` / `indexed` / `rejected` / `needs_review`). Useful when you just submitted a record and need to wait for its facts to land before querying them.
 - **`get_entity_context`** — full picture of a named entity (facts, aliases, recent activity).
 - **`get_relationship`** — facts directly between two entities.
-- **`search`** — semantic similarity across record bodies.
+- **`recall`** — semantic fact retrieval. Natural-language query → relevant facts plus record/entity expansion handles. The fuzzy door into the graph.
 
 ## Writing to PearScarf
 
@@ -61,8 +63,10 @@ Tools available:
 
 The PearScarf graph holds **provenance** — every fact has a `source_url` pointing back to where the record body lives. So the order is non-negotiable:
 
-1. **Persist the record body to the records repo (`sor`).** Reality records always land in the operator's system-of-record git repo — never in plans/wiki/scratch repos (e.g. `notion/`). The exact subtree for your role is declared in your role's `config.yaml` as `records_path:` (e.g. `sor/eng/infrascarf/`, `sor/gtm/linkedin-prospecting/`, `sor/comms/`). Write your markdown file at `<records_path>/<your-record-filename>.md`, `git commit`, `git push`.
+1. **Persist the record body to the records repo (`sor`).** Reality records always land in the operator's system-of-record git repo — never in plans/wiki/scratch repos (e.g. `notion/`). The exact subtree for your role is declared in your role's `config.yaml` as `records_path:` (e.g. `sor/<domain>/<role>/`). Write your markdown file at `<records_path>/<your-record-filename>.md`, `git commit`, `git push`.
 2. **Only after persistence is complete**, call `submit_record` on the `pearscarf` MCP with the body content + the resolvable `url` pointing back to that committed path.
+
+**Before you submit, resolve your facts' subjects to the graph's canonical names.** For each fact, look up its subject (and any key target) with `get_entity_context` or `recall` and use the *exact* name the graph already knows it by (the `resolved_to` value). If the lookup is `not_found` or comes back ambiguous (`alternatives`), you're creating or forking an entity — make that a deliberate choice, not an accident of phrasing. A fact that names an entity by a casual phrase when the graph already has a canonical name for it either spawns a duplicate or fails to merge. This is the read→write loop: query the graph for canonical names, *then* write.
 
 Records that exist only in the graph but not in `sor` will haunt you — provenance links break the moment someone clicks them. Records that land in `notion/` or other plans/wiki repos are mis-categorized: those repos are for plans and reference material, not shipped operational deltas.
 
