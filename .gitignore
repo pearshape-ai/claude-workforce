@@ -3,6 +3,8 @@
 workestrator.yaml
 .workforce/
 .workestrator/
+.claude/*
+!.claude/commands/
 .venv/
 __pycache__/
 *.pyc
