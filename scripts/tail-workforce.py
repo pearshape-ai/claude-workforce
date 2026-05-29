@@ -104,11 +104,42 @@ def load_roster(roles_dir: Path | None) -> dict[str, str]:
 
 # ----- formatting helpers -----
 
+# Trim helpers — set by init_trim() once events_path is known.
+_WORKSPACE_PREFIX: str | None = None
+_HOME_PREFIX = str(Path.home())
+
+
+def init_trim(events_path: Path) -> None:
+    """Detect the workspace root from the events file location so renders strip it.
+
+    Convention: events.jsonl lives at `<workspace>/<workforce-checkout>/.workforce/events.jsonl`,
+    so the workspace root is two parents above `.workforce/`. Falls back to `$HOME → ~`.
+    """
+    global _WORKSPACE_PREFIX
+    if events_path.parent.name == ".workforce":
+        candidate = events_path.parent.parent.parent
+        if candidate.is_dir():
+            _WORKSPACE_PREFIX = str(candidate).rstrip("/") + "/"
+
+
+def trim_paths(s: str) -> str:
+    """Strip the workspace root from any rendered string; fall back to `$HOME → ~`."""
+    if not s:
+        return s
+    if _WORKSPACE_PREFIX and _WORKSPACE_PREFIX in s:
+        s = s.replace(_WORKSPACE_PREFIX, "")
+    if _HOME_PREFIX in s:
+        s = s.replace(_HOME_PREFIX, "~")
+    return s
+
+
 def short_path(p: str) -> str:
     if not p:
         return ""
+    p = trim_paths(p)
     parts = p.rstrip("/").split("/")
-    return "/".join(parts[-3:]) if len(parts) > 3 else p
+    # Already short after trim? Keep as-is. Otherwise tail-clip.
+    return "/".join(parts[-3:]) if len(parts) > 5 else p
 
 
 def short_url(u: str) -> str:
@@ -164,7 +195,7 @@ def categorize_activity(tool: str, summary: str):
             return ("🧪", "running gates", CYAN, "")
         if "git add" in cmd:
             return None  # silent staging, skip
-        return ("$ ", "shell", CYAN, cmd[:70])
+        return None  # all other shell — too noisy to surface (ls/find/mkdir/cat/python -c/…)
 
     # File ops — summary is the path (string)
     if tool == "Write":
@@ -305,6 +336,7 @@ def main() -> int:
 
     roles_dir = Path(args.roles_dir) if args.roles_dir else find_roles_dir()
     roster = load_roster(roles_dir)
+    init_trim(path)
 
     mode = "rich (MCP + activity)" if args.rich else "PearScarf MCP only"
     print(f"{DIM}tailing {path} — {mode}, {len(roster)} roles known{RESET}\n", file=sys.stderr)
